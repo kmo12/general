@@ -1,5 +1,5 @@
 from random import randint
-import inspect
+
 
 # Поле, по которому будем двигаться
 general_field = [
