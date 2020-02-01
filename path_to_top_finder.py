@@ -1,16 +1,18 @@
 from random import randint
 
-
 # Поле, по которому будем двигаться
 general_field = [
-    [3, 4, 3, 2, 1],
-    [3, 3, 3, 2, 1],
-    [2, 2, 2, 2, 1],
-    [1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 1]
+    [2, 3, 3, 3, 3, 3, 2, 1, 0, 0],
+    [2, 3, 4, 4, 4, 3, 2, 1, 0, 0],
+    [2, 3, 4, 10, 4, 3, 2, 1, 0, 0],
+    [2, 3, 4, 4, 4, 3, 2, 1, 0, 0],
+    [2, 3, 3, 3, 3, 3, 2, 1, 0, 0],
+    [2, 2, 2, 2, 2, 2, 2, 1, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 ]
 # Стартовые точки по осям
-start_point_y = 3
+start_point_y = 6
 start_point_x = 3
 
 
@@ -63,10 +65,11 @@ class Navigation:
 
     Navigation.nav_admin_print(1): Включение режима отладки
     """
+
     def __init__(self, field, point_y, point_x):
-        self.__field = field
-        self.__point_x = point_x
-        self.__point_y = point_y
+        self.field = field
+        self.point_x = point_x
+        self.point_y = point_y
 
         # Блок с атрибутами навигации
         self.center = (
@@ -121,53 +124,55 @@ class Navigation:
                 {Navigation.left=}\n\
                 **************")
 
-    # Блок защиты от записи атрибутов field, point_x, point_y для теста защиты от записи атрибутов
-    def get_main_nav_data(self, num_get=0):
-        if num_get == 1:
-            return self.__field
-        elif num_get == 2:
-            return self.__point_x
-        elif num_get == 3:
-            return self.__point_y
-    field = property(get_main_nav_data(1))
-    point_x = property(get_main_nav_data(2))
-    point_y = property(get_main_nav_data(3))
-
-
-Navigation = Navigation(general_field, start_point_y, start_point_x)
-
-list_of_directions = (Navigation.top_left,
-                      Navigation.top_top,
-                      Navigation.top_right,
-                      Navigation.right,
-                      Navigation.bottom_right,
-                      Navigation.bottom_bottom,
-                      Navigation.bottom_left,
-                      Navigation.left)
-
-
-print(Navigation.center)
-
-Navigation.nav_admin_print(1)
-
-
-def which_way():
-    current_decision = Navigation.center
-    prev_current_decision = current_decision
-
-    while True:
-        # prev_current_decision = current_decision
-        for i in list_of_directions:
+    def which_way(self, current_decision_param, list_of_directions_param):
+        for i in list_of_directions_param:
             if i[0] or i[0] == 0:
-                if i[0] > current_decision[0]:
-                    print(f"Старая позиция: {current_decision=}")
-                    current_decision = i
-                    print(f"Новая позиция: {current_decision=}")
+                if i[0] > current_decision_param[0]:
+                    # print(f"Старая позиция: {current_decision_param=}")
+                    current_decision_param = i
+                    # print(f"Новая позиция: {current_decision_param=}")
+                    print(f"{current_decision_param=}")
+                    return current_decision_param
+                # TODO: Добавить функционал выбора рандомной точки, если центр и все вокруг одинаковые
         else:
-            if prev_current_decision == current_decision:
-                break
-
-    print(current_decision)
+            return None, None, None  # Имитация отсутствия данных о точке по координатам и о самих координатах
 
 
-which_way()
+# not_first_tik_counter = False
+
+Navigation_var = Navigation(general_field, start_point_y, start_point_x)
+
+current_decision = Navigation_var.center
+
+list_of_directions = (Navigation_var.top_left,
+                      Navigation_var.top_top,
+                      Navigation_var.top_right,
+                      Navigation_var.right,
+                      Navigation_var.bottom_right,
+                      Navigation_var.bottom_bottom,
+                      Navigation_var.bottom_left,
+                      Navigation_var.left)
+
+current_decision = Navigation_var.which_way(current_decision, list_of_directions)
+
+
+while True:
+
+    Navigation_var = Navigation(general_field, current_decision[1], current_decision[2])
+
+    # current_decision = Navigation.center
+    list_of_directions = (Navigation_var.top_left,
+                          Navigation_var.top_top,
+                          Navigation_var.top_right,
+                          Navigation_var.right,
+                          Navigation_var.bottom_right,
+                          Navigation_var.bottom_bottom,
+                          Navigation_var.bottom_left,
+                          Navigation_var.left)
+
+    current_decision = Navigation_var.which_way(current_decision, list_of_directions)
+
+    if current_decision == 10:  # TODO: Тут костыль! Нужно сделать нормальный выход из цикла
+        break
+
+print(f"Готово! Самая высокая точка: {current_decision=}")
