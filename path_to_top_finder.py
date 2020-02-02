@@ -2,18 +2,18 @@ from random import randint
 
 # Поле, по которому будем двигаться
 general_field = [
-    [2, 3, 3, 3, 3, 3, 2, 1, 0, 0],
-    [2, 3, 4, 4, 4, 3, 2, 1, 0, 0],
-    [2, 3, 4, 10, 4, 3, 2, 1, 0, 0],
-    [2, 3, 4, 4, 4, 3, 2, 1, 0, 0],
-    [2, 3, 3, 3, 3, 3, 2, 1, 0, 0],
-    [2, 2, 2, 2, 2, 2, 2, 1, 0, 0],
-    [1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
-    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    [2, 3, 3, 3, 2, 2, 2, 1, 2, 0],
+    [2, 3, 4, 4, 2, 2, 2, 2, 2, 0],
+    [2, 3, 4, 5, 2, 2, 2, 1, 1, 0],
+    [2, 3, 4, 4, 2, 2, 2, 1, 1, 0],
+    [2, 3, 3, 2, 2, 2, 1, 1, 1, 1],
+    [2, 2, 2, 2, 2, 2, 1, 1, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 1, 0, 0, 1, 1, 0, 0]
 ]
-# Стартовые точки по осям
-start_point_y = 6
-start_point_x = 3
+# Стартовые точки по осям (Можно сделать рандомными)
+start_point_y = 7
+start_point_x = 9
 
 
 def is_destination_available(field, point_y, point_x):
@@ -126,20 +126,42 @@ class Navigation:
 
     def which_way(self, current_decision_param, list_of_directions_param):
         for i in list_of_directions_param:
-            if i[0] or i[0] == 0:
+            if isinstance(i[0], (int, float)):
+                # Сюда дополнительными if можно прописывать функционал поведения и выбора след. точки
                 if i[0] > current_decision_param[0]:
-                    # print(f"Старая позиция: {current_decision_param=}")
                     current_decision_param = i
-                    # print(f"Новая позиция: {current_decision_param=}")
-                    print(f"{current_decision_param=}")
+                    print(f"Найдена точка больше: {current_decision_param}")
                     return current_decision_param
-                # TODO: Добавить функционал выбора рандомной точки, если центр и все вокруг одинаковые
+
         else:
-            return None, None, None  # Имитация отсутствия данных о точке по координатам и о самих координатах
+            # TODO Иногда робот может посчитать, что нашёл самую высокую точку. Ошибка в методе определения такой точки
+            #  (Последней точкой проверки является Navigation.left, по ней идёт сравнение, если не найдена точка выше.
+            #  (Ошибка появилась из-за else в цикле for функции Navigation().which_way())
+            if current_decision_param[0] == i[0]:
+                print("Имеющаяся и все соседние точки оказались равны")
+
+                while True:
+                    rand_list_of_directions_param = list_of_directions_param[randint(0, 7)]
+                    if not rand_list_of_directions_param[0] is None:  # \
+
+                        # TODO Нужно починить. Идея такова: нужно сделать,
+                        #  чтобы робот не уходил на ранд.точки, которые меньше изначальной
+                        # and not current_decision_param[0] < rand_list_of_directions_param[0]:
+
+                        current_decision_param = rand_list_of_directions_param
+                        print(f"Берём случайную точку: {current_decision_param}\n------")
+                        # Выходим из функции, не дав провести добавление True для завершения общих поисков
+                        return current_decision_param
+
+            # Чтобы дать понять, что мы нашли самую высокую точку, добавляем четвёртый элемент в список
+            # и проверяем его наличие на выходе
+            current_decision_param = list(current_decision_param)
+            current_decision_param.append(True)
+            return current_decision_param
 
 
-# not_first_tik_counter = False
-
+# Берём начальные данные с верха страницы и начинаем поиск
+# (Простой Navigation = Navigation() выглядел хорошо, но конфликтовал и давал сбой в дальнейшем вызове в while)
 Navigation_var = Navigation(general_field, start_point_y, start_point_x)
 
 current_decision = Navigation_var.center
@@ -155,12 +177,9 @@ list_of_directions = (Navigation_var.top_left,
 
 current_decision = Navigation_var.which_way(current_decision, list_of_directions)
 
-
 while True:
-
     Navigation_var = Navigation(general_field, current_decision[1], current_decision[2])
 
-    # current_decision = Navigation.center
     list_of_directions = (Navigation_var.top_left,
                           Navigation_var.top_top,
                           Navigation_var.top_right,
@@ -172,7 +191,8 @@ while True:
 
     current_decision = Navigation_var.which_way(current_decision, list_of_directions)
 
-    if current_decision == 10:  # TODO: Тут костыль! Нужно сделать нормальный выход из цикла
+    if len(current_decision) == 4:
+        # del current_decision[-1]
         break
 
 print(f"Готово! Самая высокая точка: {current_decision=}")
