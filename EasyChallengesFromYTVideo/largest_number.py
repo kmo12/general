@@ -13,16 +13,19 @@
 
 
 # Неоптимизированный и костыльный способ, который просто будет работать:
+# def largest_number(digit):
+#     nines = []
+#     for i in range(0, digit):
+#         nines.append(9)
+#
+#     result = ""
+#     for i in nines:
+#         result += str(i)
+#
+#     return result
+
 def largest_number(digit):
-    nines = []
-    for i in range(0, digit):
-        nines.append(9)
-
-    result = ""
-    for i in nines:
-        result += str(i)
-
-    return result
+    return (10 ** digit) - 1
 
 
 some_digit = 7
