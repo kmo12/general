@@ -19,12 +19,13 @@ start_point_x = 9
 def is_destination_available(field, point_y, point_x):
     """
     Проверка точки по "координате" на доступность
-    :param field:
-    :param point_y:
-    :param point_x:
+
+    :param field:general лист (поле, на котором идёт ориентация)
+    :param point_y: "координата" по вложенным листам первого уровня([]) внутри general листа
+    :param point_x: "координата" по вложенным листам второго уровня ([][]) внутри general листа
     :return: None, если точка по координатам не найдена.
     Если точка меньше нуля: отдаёт None.
-    Если найдена и больше нуля: отдаёт координату.
+    Если найдена и она больше нуля: отдаёт координату.
     """
     if point_y >= 0 and point_x >= 0:
         try:
@@ -40,18 +41,14 @@ def is_destination_available(field, point_y, point_x):
         return None
 
 
-# Проверка, нужно ли рассматривать точку для передвижения на неё
-# if isinstance(nav_testing[2][0], (int, float)):
-#     pass
-
 class Navigation:
     """
-    Навигация:
-    Обращение к определённой позиции выдаст: (значение в точке; точка Y; точка X)
+    Класс получает поле (на котором идёт ориентация) и координаты Y и X.
+    После инициализации может отдать "координаты" точек, которые находятся в радиусе 1 от "изначальной".
 
-    :param field: general лист
-    :param point_x: "координата" по вложенным листам второго уровня ([][]) внутри general листа
+    :param field: general лист (поле, на котором идёт ориентация)
     :param point_y: "координата" по вложенным листам первого уровня([]) внутри general листа
+    :param point_x: "координата" по вложенным листам второго уровня ([][]) внутри general листа
     Лист из всех направлений:
     center
     top_left
@@ -124,44 +121,65 @@ class Navigation:
                 {Navigation.left=}\n\
                 **************")
 
-    def which_way(self, current_decision_param, list_of_directions_param):
-        for i in list_of_directions_param:
-            if isinstance(i[0], (int, float)):
-                # Сюда дополнительными if можно прописывать функционал поведения и выбора след. точки
-                if i[0] > current_decision_param[0]:
-                    current_decision_param = i
-                    print(f"Найдена точка больше: {current_decision_param}")
+
+def which_way(current_decision_param, list_of_directions_param):
+    """
+    Выбираем подходящую точку с координатами из списка с подобными точками по определённым условиям (об этом в :return:)
+
+    :param current_decision_param: исходное положение на поле (list(значение по коорд., Y, X))
+    :param list_of_directions_param: список значений от всех направлений вокруг (получается через Navigation)
+    :return: положение на поле, точку, которая либо больше исходной, либо взята случайно из имеющихся вокруг
+     (случайная точка не будет None, и будет не меньше исходной)
+    """
+    # Переменная для определения самой высокой из имеющихся вокруг
+    highest_of_around = 0
+
+    for i in list_of_directions_param:
+        if isinstance(i[0], (int, float)):
+            # Сюда дополнительными if можно прописывать функционал поведения выбора след. точки
+
+            # Узнаём самую высокую точку из имеющихся вокруг
+            if i[0] > highest_of_around:
+                highest_of_around = i[0]
+
+            if i[0] > current_decision_param[0]:
+                current_decision_param = i
+
+                print(f"Найдена точка больше: {current_decision_param}")
+                return current_decision_param
+
+    else:
+        # Иногда робот мог посчитать, что нашёл самую высокую точку раньше времени.
+        #  Ошибка была в методе определения такой точки (Последней точкой проверки являлась Navigation.left,
+        #  по ней шло сравнение, если не найдена точка выше.
+        #  Исправлено с помощью ..or current_decision_param[0] == highest_of_around
+        if current_decision_param[0] == i[0] or current_decision_param[0] == highest_of_around:
+            print("Имеющаяся и все соседние точки оказались равны")
+
+            while True:
+                rand_from_list_of_directions_param = list_of_directions_param[randint(0, 7)]
+
+                if not rand_from_list_of_directions_param[0] is None \
+                        and rand_from_list_of_directions_param[0] == current_decision_param[0]:
+                    current_decision_param = rand_from_list_of_directions_param
+                    print(f"Берём случайную точку: {current_decision_param}\n------")
+
+                    # Выходим из функции, не дав провести добавление True для завершения общих поисков
                     return current_decision_param
 
-        else:
-            # TODO Иногда робот может посчитать, что нашёл самую высокую точку. Ошибка в методе определения такой точки
-            #  (Последней точкой проверки является Navigation.left, по ней идёт сравнение, если не найдена точка выше.
-            #  (Ошибка появилась из-за else в цикле for функции Navigation().which_way())
-            if current_decision_param[0] == i[0]:
-                print("Имеющаяся и все соседние точки оказались равны")
+        # Чтобы дать понять, что мы нашли самую высокую точку, добавляем четвёртый элемент в список
+        # и проверяем его наличие на выходе
+        current_decision_param = list(current_decision_param)
+        current_decision_param.append(True)
+        return current_decision_param
 
-                while True:
-                    rand_list_of_directions_param = list_of_directions_param[randint(0, 7)]
-                    if not rand_list_of_directions_param[0] is None:  # \
 
-                        # TODO Нужно починить. Идея такова: нужно сделать,
-                        #  чтобы робот не уходил на ранд.точки, которые меньше изначальной
-                        # and not current_decision_param[0] < rand_list_of_directions_param[0]:
-
-                        current_decision_param = rand_list_of_directions_param
-                        print(f"Берём случайную точку: {current_decision_param}\n------")
-                        # Выходим из функции, не дав провести добавление True для завершения общих поисков
-                        return current_decision_param
-
-            # Чтобы дать понять, что мы нашли самую высокую точку, добавляем четвёртый элемент в список
-            # и проверяем его наличие на выходе
-            current_decision_param = list(current_decision_param)
-            current_decision_param.append(True)
-            return current_decision_param
+def path_find_starter(navigation_class):
+    pass
 
 
 # Берём начальные данные с верха страницы и начинаем поиск
-# (Простой Navigation = Navigation() выглядел хорошо, но конфликтовал и давал сбой в дальнейшем вызове в while)
+#  (Простой Navigation = Navigation() выглядел хорошо, но конфликтовал и давал сбой в дальнейшем вызове в while)
 Navigation_var = Navigation(general_field, start_point_y, start_point_x)
 
 current_decision = Navigation_var.center
@@ -175,7 +193,7 @@ list_of_directions = (Navigation_var.top_left,
                       Navigation_var.bottom_left,
                       Navigation_var.left)
 
-current_decision = Navigation_var.which_way(current_decision, list_of_directions)
+current_decision = which_way(current_decision, list_of_directions)
 
 while True:
     Navigation_var = Navigation(general_field, current_decision[1], current_decision[2])
@@ -189,10 +207,10 @@ while True:
                           Navigation_var.bottom_left,
                           Navigation_var.left)
 
-    current_decision = Navigation_var.which_way(current_decision, list_of_directions)
+    current_decision = which_way(current_decision, list_of_directions)
 
     if len(current_decision) == 4:
-        # del current_decision[-1]
+        del current_decision[-1]
         break
 
 print(f"Готово! Самая высокая точка: {current_decision=}")
