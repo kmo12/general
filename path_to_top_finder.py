@@ -1,19 +1,52 @@
 from random import randint
+import time
 
-# Поле, по которому будем двигаться
-general_field = [
-    [2, 3, 3, 3, 2, 2, 2, 1, 2, 0],
-    [2, 3, 4, 4, 2, 2, 2, 2, 2, 0],
-    [2, 3, 4, 5, 2, 2, 2, 1, 1, 0],
-    [2, 3, 4, 4, 2, 2, 2, 1, 1, 0],
-    [2, 3, 3, 2, 2, 2, 1, 1, 1, 1],
-    [2, 2, 2, 2, 2, 2, 1, 1, 1, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
-    [0, 0, 0, 1, 0, 0, 1, 1, 0, 0]
-]
+# Пример поля, по которому будем двигаться
+# general_field = [
+#     [2, 3, 3, 3, 2, 2, 2, 1, 2, 0],
+#     [2, 3, 4, 4, 2, 2, 2, 2, 2, 0],
+#     [2, 3, 4, 5, 2, 2, 2, 1, 1, 0],
+#     [2, 3, 4, 4, 2, 2, 2, 1, 1, 0],
+#     [2, 3, 3, 2, 2, 2, 1, 1, 1, 1],
+#     [2, 2, 2, 2, 2, 2, 1, 1, 1, 1],
+#     [1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+#     [0, 0, 0, 1, 0, 0, 1, 1, 0, 0]
+# ]
+
 # Стартовые точки по осям (Можно сделать рандомными)
-start_point_y = 7
-start_point_x = 9
+start_point_y = 3
+start_point_x = 3
+
+
+####################################
+def field_generator(sum_y, sum_x, nums):
+    if sum_y:
+        return [[nums for _ in range(0, sum_x)] for _ in range(0, sum_y)]
+    else:
+        raise Exception("Field is empty! Y <= 0")
+
+
+field_size_y = 10
+field_size_x = 10
+
+# general_field = field_generator(y, x, randint(0, 2))
+general_field = field_generator(field_size_y, field_size_x, 0)
+
+rand_y = randint(0, field_size_y - 1)
+rand_x = randint(0, field_size_x - 1)
+
+general_field[rand_y][rand_x] = 1
+
+# Возможность визуализации поля перед началом работы
+# for element in general_field:
+#     print(element)
+
+print(f"Поле: {field_size_x} x {field_size_y}")
+print(f"Случайная точка установлена на: x:{rand_y}, y:{rand_x}")
+
+# Берём таймаут для быстрого просмотра вводных данных
+time.sleep(2)
+####################################
 
 
 def is_destination_available(field, point_y, point_x):
@@ -178,6 +211,9 @@ def path_find_starter(navigation_class):
     pass
 
 
+# Счётчик шагов, затраченных на нахождение высокой точки
+steps_counter = 0
+
 # Берём начальные данные с верха страницы и начинаем поиск
 #  (Простой Navigation = Navigation() выглядел хорошо, но конфликтовал и давал сбой в дальнейшем вызове в while)
 Navigation_var = Navigation(general_field, start_point_y, start_point_x)
@@ -208,9 +244,12 @@ while True:
                           Navigation_var.left)
 
     current_decision = which_way(current_decision, list_of_directions)
+    steps_counter += 1
 
     if len(current_decision) == 4:
         del current_decision[-1]
         break
 
-print(f"Готово! Самая высокая точка: {current_decision=}")
+print(f"Готово! Самая высокая точка: {current_decision}\n"
+      f""
+      f"Результат получен за {steps_counter} шага")
