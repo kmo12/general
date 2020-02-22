@@ -1,3 +1,6 @@
+
+# Общее описание скрипта
+
 from random import randint
 import time
 
@@ -13,40 +16,12 @@ import time
 #     [0, 0, 0, 1, 0, 0, 1, 1, 0, 0]
 # ]
 
-# Стартовые точки по осям (Можно сделать рандомными)
-start_point_y = 3
-start_point_x = 3
 
-
-####################################
 def field_generator(sum_y, sum_x, nums):
     if sum_y:
         return [[nums for _ in range(0, sum_x)] for _ in range(0, sum_y)]
     else:
         raise Exception("Field is empty! Y <= 0")
-
-
-field_size_y = 10
-field_size_x = 10
-
-# general_field = field_generator(y, x, randint(0, 2))
-general_field = field_generator(field_size_y, field_size_x, 0)
-
-rand_y = randint(0, field_size_y - 1)
-rand_x = randint(0, field_size_x - 1)
-
-general_field[rand_y][rand_x] = 1
-
-# Возможность визуализации поля перед началом работы
-# for element in general_field:
-#     print(element)
-
-print(f"Поле: {field_size_x} x {field_size_y}")
-print(f"Случайная точка установлена на: x:{rand_y}, y:{rand_x}")
-
-# Берём таймаут для быстрого просмотра вводных данных
-time.sleep(2)
-####################################
 
 
 def is_destination_available(field, point_y, point_x):
@@ -155,12 +130,13 @@ class Navigation:
                 **************")
 
 
-def which_way(current_decision_param, list_of_directions_param):
+def which_way(current_decision_param, list_of_directions_param, log=0):
     """
     Выбираем подходящую точку с координатами из списка с подобными точками по определённым условиям (об этом в :return:)
 
     :param current_decision_param: исходное положение на поле (list(значение по коорд., Y, X))
     :param list_of_directions_param: список значений от всех направлений вокруг (получается через Navigation)
+    :param log: 1/0 - Выведение в print отчёта о шагах
     :return: положение на поле, точку, которая либо больше исходной, либо взята случайно из имеющихся вокруг
      (случайная точка не будет None, и будет не меньше исходной)
     """
@@ -178,7 +154,9 @@ def which_way(current_decision_param, list_of_directions_param):
             if i[0] > current_decision_param[0]:
                 current_decision_param = i
 
-                print(f"Найдена точка больше: {current_decision_param}")
+                if log:
+                    print(f"Найдена точка больше: {current_decision_param}")
+
                 return current_decision_param
 
     else:
@@ -187,69 +165,135 @@ def which_way(current_decision_param, list_of_directions_param):
         #  по ней шло сравнение, если не найдена точка выше.
         #  Исправлено с помощью ..or current_decision_param[0] == highest_of_around
         if current_decision_param[0] == i[0] or current_decision_param[0] == highest_of_around:
-            print("Имеющаяся и все соседние точки оказались равны")
+            if log:
+                print("Имеющаяся и все соседние точки оказались равны")
 
             while True:
-                rand_from_list_of_directions_param = list_of_directions_param[randint(0, 7)]
+                rand_item_from_list_of_directions_param = list_of_directions_param[randint(0, 7)]
 
-                if not rand_from_list_of_directions_param[0] is None \
-                        and rand_from_list_of_directions_param[0] == current_decision_param[0]:
-                    current_decision_param = rand_from_list_of_directions_param
-                    print(f"Берём случайную точку: {current_decision_param}\n------")
+                if not rand_item_from_list_of_directions_param[0] is None \
+                        and rand_item_from_list_of_directions_param[0] >= current_decision_param[0] \
+                        and rand_item_from_list_of_directions_param not in prev_positions:
+                    current_decision_param = rand_item_from_list_of_directions_param
+
+                    if log:
+                        print(f"Берём случайную точку: {current_decision_param}\n------")
+
+                    # Добавляем нынешнюю позицию в список "всех предыдущих"
+                    # Эффект "короткой памяти" добавлен, чтобы не попадать в ловушки
+                    if len(prev_positions) > 2:
+                        del prev_positions[0]
+                    prev_positions.append(current_decision_param)
 
                     # Выходим из функции, не дав провести добавление True для завершения общих поисков
                     return current_decision_param
 
         # Чтобы дать понять, что мы нашли самую высокую точку, добавляем четвёртый элемент в список
-        # и проверяем его наличие на выходе
+        #  и проверяем его наличие на выходе
         current_decision_param = list(current_decision_param)
         current_decision_param.append(True)
+
+        if log:
+            print(f"Все предыдущие точки:\n"
+                  f"{prev_positions}")
+
         return current_decision_param
 
 
-def path_find_starter(navigation_class):
-    pass
+def highest_point_finder(general_field, start_point_y, start_point_x, log=0):
+    # Счётчик шагов, затраченных на получение результата
+    steps_counter = 0
+
+    global prev_positions
+    prev_positions = list()
+
+    # Берём данные о стартовой точке и поле и начинаем поиск
+    navigation = Navigation(general_field, start_point_y, start_point_x)
+
+    current_decision = navigation.center
+
+    list_of_directions = (navigation.top_left,
+                          navigation.top_top,
+                          navigation.top_right,
+                          navigation.right,
+                          navigation.bottom_right,
+                          navigation.bottom_bottom,
+                          navigation.bottom_left,
+                          navigation.left)
+
+    current_decision = which_way(current_decision, list_of_directions, log)
+
+    while True:
+        navigation = Navigation(general_field, current_decision[1], current_decision[2])
+
+        list_of_directions = (navigation.top_left,
+                              navigation.top_top,
+                              navigation.top_right,
+                              navigation.right,
+                              navigation.bottom_right,
+                              navigation.bottom_bottom,
+                              navigation.bottom_left,
+                              navigation.left)
+
+        current_decision = which_way(current_decision, list_of_directions, log)
+        steps_counter += 1
+
+        # Чтобы понять, что мы нашли самую высокую точку, мы в which_way() добавляли четвёртый элемент в список
+        #  и теперь проверяем его наличие на выходе
+        if len(current_decision) == 4:
+            del current_decision[-1]
+            break
+
+    if log:
+        print(f"Готово! Самая высокая точка: {current_decision}\n"
+              f""
+              f"Результат получен за {steps_counter} шага")
+
+    return current_decision, steps_counter
 
 
-# Счётчик шагов, затраченных на нахождение высокой точки
-steps_counter = 0
+if __name__ == "__main__":
+    # Задаём величину поля (пример, как будет выглядеть поле, есть в начале страницы path_to_top_finder.py)
+    field_size_y = 10
+    field_size_x = 10
 
-# Берём начальные данные с верха страницы и начинаем поиск
-#  (Простой Navigation = Navigation() выглядел хорошо, но конфликтовал и давал сбой в дальнейшем вызове в while)
-Navigation_var = Navigation(general_field, start_point_y, start_point_x)
+    # Генерируем поле, заполняя его нулями
+    general_field = field_generator(field_size_y, field_size_x, 0)
 
-current_decision = Navigation_var.center
+    # Выбираем самую высокую точку на поле
+    general_field[8][8] = 1
 
-list_of_directions = (Navigation_var.top_left,
-                      Navigation_var.top_top,
-                      Navigation_var.top_right,
-                      Navigation_var.right,
-                      Navigation_var.bottom_right,
-                      Navigation_var.bottom_bottom,
-                      Navigation_var.bottom_left,
-                      Navigation_var.left)
+    # Стартовые точки по осям (Можно сделать рандомными):
+    # rand_point_y = randint(0, field_size_y - 1)
+    # rand_point_x = randint(0, field_size_x - 1)
+    start_point_y = 1
+    start_point_x = 1
 
-current_decision = which_way(current_decision, list_of_directions)
+    # Возможность визуализации поля перед началом работы
+    # for element in general_field:
+    #     print(element)
 
-while True:
-    Navigation_var = Navigation(general_field, current_decision[1], current_decision[2])
+    # print(f"Поле: {field_size_x} x {field_size_y}")
+    # print(f"Случайная точка установлена на: x:{80}, y:{80}")
 
-    list_of_directions = (Navigation_var.top_left,
-                          Navigation_var.top_top,
-                          Navigation_var.top_right,
-                          Navigation_var.right,
-                          Navigation_var.bottom_right,
-                          Navigation_var.bottom_bottom,
-                          Navigation_var.bottom_left,
-                          Navigation_var.left)
+    # Берём таймаут для быстрого просмотра вводных данных
+    # time.sleep(2)
 
-    current_decision = which_way(current_decision, list_of_directions)
-    steps_counter += 1
+    counter = 0
+    max_num = 0
+    min_num = 0
+    num_of_trys = 10
+    for _ in range(num_of_trys):
+        work = highest_point_finder(general_field, start_point_y, start_point_x)[1]
+        print(work)
 
-    if len(current_decision) == 4:
-        del current_decision[-1]
-        break
+        counter += work
 
-print(f"Готово! Самая высокая точка: {current_decision}\n"
-      f""
-      f"Результат получен за {steps_counter} шага")
+        if work > max_num:
+            max_num = work
+        elif work < min_num or min_num == 0:
+            min_num = work
+    else:
+        print(f"Среднее значение: {int(counter / num_of_trys)}\n"
+              f"({max_num=})\n"
+              f"{min_num=}")
