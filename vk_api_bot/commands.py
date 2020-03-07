@@ -21,6 +21,8 @@ def random_joke(random_item=0):
     """
     random_item = randint(0, 9)
     return feedparser.parse("https://www.anekdot.ru/rss/export_j.xml")["entries"][random_item]['summary']
+    # TODO: Добавить, чтобы вначале добавлял все анекдоты в список и при показе удалял отдельные.
+    #  когда все анекдоты закончатся, спросить "по второму кругу?" (решение в добавлении копии списка и в возврате к ниму)
 
 
 if __name__ == "__main__":
