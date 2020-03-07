@@ -35,12 +35,13 @@ def received_message(message=""):
 # send_message(47289987, "Сообщение")
 
 #  "Listening" for actions
-for event in long_poll.listen():
-    if event.type == VkBotEventType.MESSAGE_NEW:
-        if received_message():
-            print(event, "\n", f"{event.object.message['from_id']}:", event.object.message["text"])
+if __name__ == "__main__":
+    for event in long_poll.listen():
+        if event.type == VkBotEventType.MESSAGE_NEW:
+            if received_message():
+                print(event, "\n", f"{event.object.message['from_id']}:", event.object.message["text"])
 
-        if received_message("Анекдот") or received_message("анекдот"):
-            send_message(event.object.message["peer_id"], random_joke())
-            print("Анекдот показан")
-            continue
+            if received_message("Анекдот") or received_message("анекдот"):
+                send_message(event.object.message["peer_id"], random_joke())
+                print("Анекдот показан")
+                continue
