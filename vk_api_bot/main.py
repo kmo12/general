@@ -23,6 +23,7 @@ def received_message(message=""):
     """
 
     if message:
+        # TODO: Сюда можно добавить более свободный поиск (через search, чтобы не цеплялся за регистр)
         if event.object.message["text"] == message:
             return True
         else:
@@ -36,12 +37,22 @@ def received_message(message=""):
 
 #  "Listening" for actions
 if __name__ == "__main__":
+    send_message(47289987, "Бот запущен")
+
     for event in long_poll.listen():
         if event.type == VkBotEventType.MESSAGE_NEW:
+            # Any incoming message log
             if received_message():
+                print("--------------------------------------------------")
                 print(event, "\n", f"{event.object.message['from_id']}:", event.object.message["text"])
+
+            if received_message("exit()"):
+                send_message(event.object.message["peer_id"], "Бот отключён")
+                break
 
             if received_message("Анекдот") or received_message("анекдот"):
                 send_message(event.object.message["peer_id"], random_joke())
                 print("Анекдот показан")
-                continue
+
+# TODO: Придумал тест, надо еще одного бота, который будет писать первому несколько раз в течение ночи.
+#  Чтобы проверить длительность активного соединения.
