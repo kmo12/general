@@ -1,15 +1,14 @@
 from commands import *
+from config import main_group_id, admin_id
 
 import time
-
-# import vk_api.vk_api
 
 from vk_api.bot_longpoll import VkBotLongPoll
 from vk_api.bot_longpoll import VkBotEventType
 
 
 LPS_params = {"vk": vkApi_token,
-              "group_id": 188524220,
+              "group_id": main_group_id(),
               "v": 5.103}
 
 long_poll = VkBotLongPoll(LPS_params["vk"], group_id=LPS_params["group_id"], wait=25)
@@ -17,9 +16,11 @@ long_poll = VkBotLongPoll(LPS_params["vk"], group_id=LPS_params["group_id"], wai
 
 def received_message(message=""):
     """
+    Проверяем полученное от long_poll.listen() VkBotEventType.MESSAGE_NEW на соответствие с параметром "message".
+
     :param message: str
-    :return: True if received from user message is equal with param 'message'
-    or return just received from user message
+    :return: True if received from user message is equal with param 'message'.
+    If param field will empty, it'll return received message.
     """
 
     if message:
@@ -33,11 +34,12 @@ def received_message(message=""):
 
 
 # Перезагрузить скрипт и сообщение отправится в конфу Quadro
-# send_message(47289987, "Сообщение")
+# send_message(admin_id(), "Сообщение")
 
 #  "Listening" for actions
 if __name__ == "__main__":
-    send_message(47289987, "Бот запущен")
+    # При запуске получаем в ЛС от бота сообщение о запуске
+    send_message(admin_id(), "Бот запущен")
 
     for event in long_poll.listen():
         if event.type == VkBotEventType.MESSAGE_NEW:
@@ -46,6 +48,7 @@ if __name__ == "__main__":
                 print("--------------------------------------------------")
                 print(event, "\n", f"{event.object.message['from_id']}:", event.object.message["text"])
 
+            # Ниже прописываем условия if, исходящие из полученного сообщения
             if received_message("exit()"):
                 send_message(event.object.message["peer_id"], "Бот отключён")
                 break
