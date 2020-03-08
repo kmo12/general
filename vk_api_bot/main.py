@@ -33,14 +33,14 @@ def received_message(message=""):
     return event.object.message["text"]
 
 
-# Перезагрузить скрипт и сообщение отправится в конфу Quadro
-# send_message(admin_id(), "Сообщение")
-
-#  "Listening" for actions
 if __name__ == "__main__":
     # При запуске получаем в ЛС от бота сообщение о запуске
     send_message(admin_id(), "Бот запущен")
 
+    # TODO Добавляем в этот словарь event.object.message["peer_id"] в key и TenJokes().give_list() в value
+    people_jokes_status = dict()
+
+    # "Listening" for actions
     for event in long_poll.listen():
         if event.type == VkBotEventType.MESSAGE_NEW:
             # Any incoming message log
@@ -54,8 +54,8 @@ if __name__ == "__main__":
                 break
 
             if received_message("Анекдот") or received_message("анекдот"):
-                send_message(event.object.message["peer_id"], random_joke())
-                print("Анекдот показан")
-
-# TODO: Придумал тест, надо еще одного бота, который будет писать первому несколько раз в течение ночи.
-#  Чтобы проверить длительность активного соединения.
+                if event.object.message["peer_id"] in people_jokes_status:
+                    send_message(event.object.message["peer_id"], TenJokes().give_joke())
+                    print("Анекдот показан")
+                else:
+                    pass
