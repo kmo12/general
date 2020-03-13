@@ -24,13 +24,17 @@ def received_message(message=""):
     """
 
     if message:
-        # TODO: Сюда можно добавить более свободный поиск (через search, чтобы не цеплялся за регистр)
-        if event.object.message["text"] == message:
+        if event.object.message["text"].upper() == message.upper():
             return True
         else:
             return False
 
     return event.object.message["text"]
+
+
+class User:
+    def __init__(self, peer_id):
+        self.__peer_id = peer_id
 
 
 if __name__ == "__main__":
@@ -53,9 +57,12 @@ if __name__ == "__main__":
                 send_message(event.object.message["peer_id"], "Бот отключён")
                 break
 
-            if received_message("Анекдот") or received_message("анекдот"):
-                if event.object.message["peer_id"] in people_jokes_status:
-                    send_message(event.object.message["peer_id"], TenJokes().give_joke())
-                    print("Анекдот показан")
-                else:
-                    pass
+            if received_message("анекдот"):
+                # if event.object.message["peer_id"] in people_jokes_status:
+                #     send_message(event.object.message["peer_id"], TenJokes().give_joke())
+                #     print("Анекдот показан")
+                # else:
+                #     pass
+                      
+                send_message(event.object.message["peer_id"], TenJokes().give_joke())
+                print("Анекдот показан")
