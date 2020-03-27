@@ -1,3 +1,6 @@
+from timeit import Timer
+
+
 # O(n)
 def string_to_array(string: str) -> list:
     array = list()
@@ -12,23 +15,15 @@ def anagram_1(s1: str, s2: str) -> bool:
         return False
     a = string_to_array(s1)
     b = string_to_array(s2)
-    a.sort()  # O(n**2)
-    b.sort()  # O(n**2)
+    a.sort()
+    b.sort()
 
-    print(f"\n{a=}\n{b=}")
+    # print(f"\n{a=}\n{b=}")
 
     if a == b:
         return True
     else:
         return False
-
-    # Жалко удалять придуманное решение, работающее на sorted array
-    # for index, letter in enumerate(a):
-    #     if a[index] == b[index]:
-    #         continue
-    #     else:
-    #         result = False
-    # return result
 
 
 # O(n)
@@ -59,11 +54,25 @@ def anagram_testing(anagram_analizator):
                     "trie": "rtie",  # True
                     "qwe": "qwr",  # False
                     "tessting": "testting",  # False
+                    string_generator(9999999, "y"): string_generator(9999999, "y"),
                     "welcomehome": "homeweleomc"}  # True
 
     for a, b in testing_dict.items():
-        print(f"{a} and {b}: {anagram_analizator(a, b)}")
+        # print(f"{a} and {b}: {anagram_analizator(a, b)}")
+        anagram_analizator(a, b)
 
+        
+# O(n)
+def string_generator(char_num: int, char: str) -> str:
+    array = [str(char) for i in range(char_num)]
+    return "".join(array)
+
+
+anagram1_timer = Timer("anagram_testing(anagram_1)", "from __main__ import anagram_testing, anagram_1")
+anagram2_timer = Timer("anagram_testing(anagram_2)", "from __main__ import anagram_testing, anagram_2")
 
 if __name__ == "__main__":
-    anagram_testing(anagram_2)
+    print("{0:.6f}".format(anagram1_timer.timeit(number=1)))
+    print("{0:.6f}".format(anagram2_timer.timeit(number=1)))
+    # anagram_testing(anagram_1)
+    # anagram_testing(anagram_2)
