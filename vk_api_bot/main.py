@@ -5,6 +5,13 @@ from vk_api.bot_longpoll import VkBotLongPoll
 from vk_api.bot_longpoll import VkBotEventType
 
 
+###########
+# После добавления бота в конфу,
+# не забыть дать боту доступ ко всей переписке,
+# иначе он не будет видеть сообщения
+###########
+
+
 LPS_params = {"vk": vkApi,
               "group_id": main_group_id(),
               "v": 5.103}
@@ -18,11 +25,11 @@ def received_message(message=""):
 
     :param message: str
     :return: True if received from user message is equal with param 'message'.
-    If param field will empty, it'll return received message.
+    If param field will be empty, it'll return received message.
     """
 
     if message:
-        if event.object.message["text"].upper() == message.upper():
+        if event.object.message["text"].replace(',', '').upper() == message.upper():
             return True
         else:
             return False
@@ -83,32 +90,39 @@ if __name__ == "__main__":
             if event.object.message is not None:
                 # Сюда добавлять переменные, связанные с получаемыми данными
                 received_user_personal_id = event.object.message["from_id"]
+
                 received_dialog_id = event.object.message["peer_id"]
+
                 received_message_text = event.object.message["text"]
+
+                GetUserInfo_ = GetUserInfo(received_user_personal_id)
                 #
                 user_by_personal_id = User.identified_users.get(f"{received_user_personal_id}")
 
             if event.type == VkBotEventType.MESSAGE_NEW:
-                # Logging any incoming message
                 if received_message():
+                    # Logging any incoming message
                     print("--------------------------------------------------")
                     print(event, "\n",
                           f"Новое сообщение (от {received_user_personal_id}):", received_message_text)
 
                 # Проверка: есть ли такой пользователь в базе, если нет, то создаём нового
                 if received_user_personal_id not in User.identified_users_id:
-                    # User.identified_users[f"user_{received_user_personal_id}"] = User(received_user_personal_id)
-                    User(received_user_personal_id, "asd")  # TODO здесь заменить str параметр на метод класса ApiResponse
-                    print(f"Новый пользователь user_{received_user_personal_id} добавлен")
+                    User(received_user_personal_id, GetUserInfo_.name("именительный"))
+                    print(f"Новый пользователь ({received_user_personal_id}, {GetUserInfo_.name}) добавлен")
+
                     # print(f"{User.identified_users_id=}\n{User.identified_users=}")
 
                 # Ниже прописываем условия if, исходящие из полученного сообщения
 
                 if received_message("exit()") and is_admin(received_user_personal_id):
                     send_message(admin_id(), "Бот отключён")
-                    # TODO здесь закончить
-                    print(ApiResponse.give_user_name(received_user_personal_id))
+                    print("Бот отключён")
                     break
+
+                if received_message("привет бот") or received_message("бот привет"):
+                    hello(received_dialog_id, GetUserInfo_.name())
+                    print("Приветствие отправлено")
 
                 if received_message("анекдот"):
                     send_message(received_dialog_id, TenJokes().give_joke())
