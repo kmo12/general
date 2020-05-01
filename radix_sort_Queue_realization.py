@@ -68,7 +68,7 @@ class RadixSort:
         for i in range(10):
             print(f"q{i}: {self.__q[i]}")
 
-    def in_queue_sorter(self, symbol_position):
+    def distributor(self, symbol_position):
         # Этот метод собирает от main_list данные и сортирует их по q0, q1 и пр.
         for num in self.__main_list:
             for i in range(10):
@@ -77,7 +77,7 @@ class RadixSort:
                     break
         self.__main_list.clear()
 
-    def out_queue_picker(self):
+    def collector(self):
         # Этот метод собирает с q0, q1 и пр. данные и собирает их в self.__main_list
         for queue in self.__q:
             if not queue.is_empty():
@@ -89,8 +89,8 @@ class RadixSort:
 
         counter = -1
         while self.__num_of_max_symbols >= module(counter):
-            self.in_queue_sorter(counter)
-            self.out_queue_picker()
+            self.distributor(counter)
+            self.collector()
             counter -= 1
 
         # Возвращаем списку изначальный вид, все элементы переводим в int
