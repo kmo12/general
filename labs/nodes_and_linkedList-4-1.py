@@ -226,6 +226,9 @@ def stack_testing():
 
 
 def all_brackets_checking(s: str) -> str:
+    """
+    Для работы функции необходимо наличие класса Stack
+    """
     # ()
     brackets_stack = Stack()
     # {}
