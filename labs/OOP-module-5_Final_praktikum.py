@@ -16,33 +16,24 @@
 # Операторы не имеют приоритетов, приоритеты задаются круглыми скобками.
 # Для удобства единое выражение тоже заключено в скобки.
 
-# import abc
-#
-# class InterpreterAbstract(abc.ABC):
-#     '''Интерпретатор кода'''
-#     
-#     def __init__(self, code):
-#         '''Принимает код'''
-#         self.code = code
-#     
-#     def execute(self):
-#         '''Запускает механизм исполнения кода
-#         Возвращает результат исполнения кода'''
-#         return self._parse()
-#         
-#     @abc.abstractmethod
-#     def _parse(self):
-#         '''Осуществляет парсинг кода.
-#         Вызывает _evaluate для исполнения выражений
-#         Возвращает результат исполнения кода в excecute''' 
-#         pass
-#     
-#     @abc.abstractmethod
-#     def _evaluate(self, code):
-#         '''Осуществляет вычисление выражения
-#         Возвращает результат выражения в _parse'''      
-#         pass
+# Дополнительно 1
+# Сделайте так, чтобы код работал при любом количестве пробелов.
+# Заодно избавьтесь от первой и последней круглых скобок, что бы конечный пользователь о них не думал:
+# interpreter = Interpreter('1 + ( ( 2 + 3 ) * ( 4 * 5 ) )')
 
+# Дополнительно 2
+# Измените конструктор, чтобы он мог принимать не только строку кода, но и файл с кодом.
+# В файле каждое выражение должно располагаться на отдельной строке.
+# В этом случае результатом выполнения кода должен быть список с результатами каждого выражения.
+# Например, если содержимое файла выглядит так:
+# 1 + ( ( 2 + 3 ) * ( 4 * 5 ) )
+# 2 + ( ( 2 * 3 ) / ( 4 ^ 5 ) )
+# то
+# interpreter = Interpreter(file='code.txt')
+# print(interpreter.execute()) # [101, 2]
+
+# Дополнительно 3
+# Добавьте метод _validate, который будет перед исполнением кода проверять его сбалансированность скобок.
 
 # interpreter = Interpreter('(1+((2+3)*(4*5)))')
 # print(interpreter.execute()) # 101
@@ -94,6 +85,11 @@ class Interpreter(InterpreterAbstract):
     def __init__(self, code: str):
         super().__init__(code)
         self._brackets_checking(self.code)
+
+        self.code = self.code.replace(" ", "")
+
+        if self.code[0] != "(":
+            self.code = "(" + self.code + ")"
 
     def _brackets_checking(self, s: str):
         brackets_stack = []
@@ -159,6 +155,6 @@ class Interpreter(InterpreterAbstract):
             return f"{code[0] ** code[1]}"
 
 
-interpreter = Interpreter("(266+((23*34)/(2^4)))")
+interpreter = Interpreter(" 266 + ( (23 * 34) / (2 ^ 4) ) ")
 
 print(interpreter.execute())
