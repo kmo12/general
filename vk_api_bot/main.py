@@ -29,10 +29,7 @@ def received_message(message=""):
     """
 
     if message:
-        if event.object.message["text"].replace(',', '').upper() == message.upper():
-            return True
-        else:
-            return False
+        return message.upper() in event.object.message["text"].replace(',', '').upper()
 
     return event.object.message["text"]
 
