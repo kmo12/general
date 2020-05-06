@@ -37,11 +37,9 @@
 
 # interpreter = Interpreter('(1+((2+3)*(4*5)))')
 # print(interpreter.execute()) # 101
-# 
+#
 # interpreter = Interpreter('(2+((2*3)/(4^5)))')
 # print(interpreter.execute()) # 2
-
-
 
 
 import abc
@@ -158,26 +156,33 @@ class Interpreter(InterpreterAbstract):
             return f"{code[0] ** code[1]}"
 
     def clean_code(self, code_line=None):
-
-        def _brackets_checking(s: str):
-            brackets_stack = []
-            s.replace(" ", "")
-            for element in s:
-                if element == "(" or element == ")":
-                    if element == "(":
-                        brackets_stack.append(1)
-                    elif element == ")":
-                        if not brackets_stack:
-                            raise Exception("'(' is missing.")
-                        brackets_stack.pop()
-            if brackets_stack:
-                raise Exception("Troubles with '()'")
-
         code_for_check = self.code or code_line
 
-        _brackets_checking(code_for_check)
-
         code_for_check = code_for_check.replace(" ", "")
+
+        # Brackets and other signs checking
+        brackets_stack = []
+        signs_stack = []
+        signs = "+-*/^"
+        for element in code_for_check:
+            if element == "(" or element == ")":
+                if element == "(":
+                    brackets_stack.append(1)
+                elif element == ")":
+                    if not brackets_stack:
+                        raise Exception("'(' is missing.")
+                    brackets_stack.pop()
+
+            if element in signs:
+                if signs_stack:
+                    raise Exception("Troubles with '+-*/^'")
+                signs_stack.append(element)
+            else:
+                if signs_stack:
+                    signs_stack.pop()
+
+        if brackets_stack:
+            raise Exception("Troubles with '()'")
 
         if "n" in code_for_check:
             code_for_check = code_for_check.replace("\n", "")
