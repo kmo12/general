@@ -52,14 +52,15 @@ import math
 class InterpreterAbstract(abc.ABC):
     """Интерпретатор кода"""
 
-    def __init__(self, code: str):
+    def __init__(self, code):
         """Принимает код"""
         self.code = code
 
+    @abc.abstractmethod
     def execute(self):
         """Запускает механизм исполнения кода
         Возвращает результат исполнения кода"""
-        return self._parse()
+        pass
 
     @abc.abstractmethod
     def _parse(self):
@@ -75,41 +76,43 @@ class InterpreterAbstract(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def _brackets_checking(self, s: str):
-        """Проверяет введённое выражение на ошибки со скобками
-        Возвращает ошибку, если есть проблемы"""
+    def clean_code(self, s: str):
+        """Проверяет введённое выражение на ошибки со скобками, пробелами, и "\n"
+        Возвращает "чистую", обработанную строчку
+        Возвращает ошибку, если есть проблемы со скобками"""
         pass
 
 
 class Interpreter(InterpreterAbstract):
-    def __init__(self, code: str):
+    def __init__(self, code="", file=""):
         super().__init__(code)
-        self._brackets_checking(self.code)
 
-        self.code = self.code.replace(" ", "")
+        self.file = file
 
-        if self.code[0] != "(":
-            self.code = "(" + self.code + ")"
+    def execute(self):
+        if not self.code and not self.file:
+            return "Введите выражение!"
+        elif self.code and self.file:
+            return "Выберите что-то одно:\n либо решение одного выражения, либо решение файла!"
 
-    def _brackets_checking(self, s: str):
-        brackets_stack = []
+        if self.code:
+            self.clean_code()
+            return self._parse()
 
-        s.replace(" ", "")
+        if self.file:
+            results_list = []
 
-        for element in s:
-            if element == "(" or element == ")":
-                if element == "(":
-                    brackets_stack.append(1)
-                elif element == ")":
-                    if not brackets_stack:
-                        raise Exception("'(' is missing.")
-                    brackets_stack.pop()
+            with open(self.file, "r", encoding="utf-8") as txt_file:
+                for line in txt_file.readlines():
+                    results_list.append(self._parse(self.clean_code(line)))
 
-        if brackets_stack:
-            raise Exception("Troubles with '()'")
+            return results_list
 
-    def _parse(self):
-        work_code = self.code
+    def _parse(self, inner_code=None):
+        if not inner_code:
+            work_code = self.code
+        else:
+            work_code = inner_code
 
         o_bracket_ind = 0
         c_bracket_ind = 0
@@ -122,11 +125,11 @@ class Interpreter(InterpreterAbstract):
                 elif char == ")":
                     c_bracket_ind = index
 
-                    expression = work_code[o_bracket_ind:c_bracket_ind+1]
+                    expression = work_code[o_bracket_ind:c_bracket_ind + 1]
                     work_code = work_code.replace(f"{expression}", self._evaluate(expression))
 
                     # Для визуализации работы
-                    print(f"{expression=}. {work_code=}")
+                    # print(f"{expression=}. {work_code=}")
 
                     break
 
@@ -154,7 +157,42 @@ class Interpreter(InterpreterAbstract):
         if math_sign == "^":
             return f"{code[0] ** code[1]}"
 
+    def clean_code(self, code_line=None):
 
-interpreter = Interpreter(" 266 + ( (23 * 34) / (2 ^ 4) ) ")
+        def _brackets_checking(s: str):
+            brackets_stack = []
+            s.replace(" ", "")
+            for element in s:
+                if element == "(" or element == ")":
+                    if element == "(":
+                        brackets_stack.append(1)
+                    elif element == ")":
+                        if not brackets_stack:
+                            raise Exception("'(' is missing.")
+                        brackets_stack.pop()
+            if brackets_stack:
+                raise Exception("Troubles with '()'")
 
-print(interpreter.execute())
+        code_for_check = self.code or code_line
+
+        _brackets_checking(code_for_check)
+
+        code_for_check = code_for_check.replace(" ", "")
+
+        if "n" in code_for_check:
+            code_for_check = code_for_check.replace("\n", "")
+
+        if code_for_check[0] != "(":
+            code_for_check = "(" + code_for_check + ")"
+
+        if self.code:
+            self.code = code_for_check
+        else:
+            return code_for_check
+
+
+interpreter = Interpreter(file="OOP-module-5_Final_praktikum.txt")
+print(interpreter.execute())  # ['101', '2']
+
+print(Interpreter("(1+((2+3)*(4*5)))").execute())  # 101
+print(Interpreter("(2+((2*3)/(4^5)))").execute())  # 2
