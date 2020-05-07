@@ -44,7 +44,6 @@
 
 import abc
 import re
-import math
 
 
 class InterpreterAbstract(abc.ABC):
@@ -138,21 +137,21 @@ class Interpreter(InterpreterAbstract):
             code = code.replace("(", "")
             code = code.replace(")", "")
 
-        math_sign = re.search(r"[\+\-\*\/\^]", code).group()
-        code = code.split(math_sign)
+        operator = re.search(r"[\+\-\*\/\^]", code).group()
+        code = code.split(operator)
 
-        code[0] = int(math.floor(float(code[0])))
-        code[1] = int(math.floor(float(code[1])))
+        code[0] = int(code[0])
+        code[1] = int(code[1])
 
-        if math_sign == "+":
+        if operator == "+":
             return f"{code[0] + code[1]}"
-        if math_sign == "-":
+        if operator == "-":
             return f"{code[0] - code[1]}"
-        if math_sign == "*":
+        if operator == "*":
             return f"{code[0] * code[1]}"
-        if math_sign == "/":
-            return f"{code[0] / code[1]}"
-        if math_sign == "^":
+        if operator == "/":
+            return f"{code[0] // code[1]}"
+        if operator == "^":
             return f"{code[0] ** code[1]}"
 
     def clean_code(self, code_line=None):
