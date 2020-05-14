@@ -5,6 +5,7 @@ import commands
 
 import telebot
 
+
 bot = telebot.TeleBot(api_token())
 
 
@@ -26,10 +27,17 @@ if __name__ == '__main__':
         text = message.text.lower()
         chat_id = message.chat.id
         if text == "отзывы":
-            bot.send_message(chat_id, f'{commands.get_yandex_company_reviews(13156405625)}')
+            counter = 0
+
+            for review in commands.get_reviews_list_for_message(108782403357):
+                bot.send_message(chat_id, review)
+                counter += 1
+                if counter > 3:
+                    break
+
             log_message(f"Отзывы показаны в чате №{chat_id}")
         else:
             bot.send_message(chat_id, 'Простите, я ваc не понял :(')
             log_message(f"Сообщение не распознано: {message.text}")
 
-    bot.polling(none_stop=False, interval=0, timeout=20)
+    bot.infinity_polling()
