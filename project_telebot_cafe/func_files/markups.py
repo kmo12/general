@@ -36,14 +36,46 @@ def yandex_our_corp_link():
 
 def reply_start_all_buttons():
     """
-    Прилагается к сообщению с вопросом "Показать ещё отзывы?" после вывода отзывов.
+    Общие кнопки меню со всеми возможными функциями бота.
     :return: types.ReplyKeyboardMarkup Object
     """
     keyboard = types.ReplyKeyboardMarkup(row_width=1, resize_keyboard=True)
     btn1 = types.KeyboardButton("Забронировать столик")
     btn2 = types.KeyboardButton("Показать отзывы")
-    btn3 = types.KeyboardButton("Написать отзыв")  # Вывести сообщение "Напишите отзыв по ссылке на яндекс картах 'ссылка'"
+    btn3 = types.KeyboardButton("Написать отзыв")
     keyboard.add(btn1, btn2, btn3)
+
+    return keyboard
+
+
+def keyboard_request_telephone_button():
+    # Available in private chats only!
+    button = types.ReplyKeyboardMarkup()
+    key_telephone = types.KeyboardButton("Отправить свой телефон", request_contact=True)
+    button.add(key_telephone)
+
+
+def inline_confirm_reservation():
+    inline_keyboard = types.InlineKeyboardMarkup()
+
+    key_yes = types.InlineKeyboardButton(text='Да', callback_data='/yes')
+    key_no = types.InlineKeyboardButton(text='Нет', callback_data='/no')
+
+    inline_keyboard.add(key_yes, key_no)
+
+    return inline_keyboard
+
+
+def keyboard_confirm_reservation():
+    """
+    Кнопки для ответа на вопрос о подтверждении резервации столика.
+    После выбора опции клавиатура не пропадает!
+    :return: types.ReplyKeyboardMarkup Object
+    """
+    keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)  #, one_time_keyboard=True)
+    btn1 = types.KeyboardButton("Да")
+    btn2 = types.KeyboardButton("Нет")
+    keyboard.add(btn1, btn2)
 
     return keyboard
 
