@@ -1,42 +1,20 @@
 # -*- coding: utf-8 -*-
 
 import func_files.config as config
-import func_files.commands as cmds
+import func_files.commands2 as cmds
 import func_files.markups as m
+
+# import func_files.calendar_module as t_calendar
 
 import telebot
 
-import datetime
-
-# Интеграция VK API для отправки сообщений админу ТГ канала в ВК
-from vk_api_bot.config import admin_id as vk_admin_id
-from vk_api_bot.commands import send_message as vk_send_message_module
-
 bot = telebot.TeleBot(config.api_token())
 
-
-def log_message(*message, chat='No chat ID', vk=False):
-    """
-    В этой функции настриваются методы отображения логов.
-    :param chat: ID чата, в котором было произведено действие
-    :param message: набор str, который превратится в одну строчку
-    :param vk: Посылать ли указанное сообщение админу в ВК сообщение
-    :return: None
-    """
-    time_now = str(datetime.datetime.now())[:19]
-    inner_message = f"({str(chat)})" + " ".join(message)
-
-    print(time_now + ":", inner_message)
-
-    if vk:
-        try:
-            vk_send_message_module(vk_admin_id(), inner_message)
-        except NameError:
-            print("Модуль VK API не найден!")
-
+all_reservations_by_id = {}
 
 if __name__ == '__main__':
-    log_message("Telegram bot GrandCafe запущен", vk=True)
+    cmds.log_message("Telegram bot GrandCafe запущен", vk=True)
+
 
     # TODO При использовании скрипта более чем 1 человеком global переменная будет ломаться.
     #  Возможное решение: добавить какую-то хэш-таблицу вида {message.chat.id: False} или запись в БД и сверяться с ней
@@ -44,7 +22,6 @@ if __name__ == '__main__':
 
     @bot.message_handler(commands=['start'])
     def start_handler(message):
-        # global is_bot_running
         chat_id = message.chat.id
         bot.send_message(chat_id,
                          "Вас приветствует GrandCafe!\n"
@@ -53,28 +30,51 @@ if __name__ == '__main__':
                          "Хотите самостоятельно написать отзыв или предложение?\n"
                          "Просто выберите нужный пункт в меню ниже!",
                          reply_markup=m.reply_start_all_buttons())
-        log_message("/start", chat=chat_id)
+        cmds.log_message("/start", chat=chat_id)
         # TODO изменить эту часть, при /start можно выводить основное кнопочное меню или как-то так
 
+
     @bot.message_handler(content_types=['text'])
-    def text_handler(message):
-        text = message.text.lower()
-        chat_id = message.chat.id
+    def text_handler(message_object):
+        text = message_object.text.lower()
+        chat_id = message_object.chat.id
 
-        if text == "отзывы" or text == "показать отзывы":
-            cmds.show_yandex_reviews(page=1, chat_id_inner=chat_id)
+        if text == "забронировать столик":
+            cmds.log_message(f"{all_reservations_by_id}")
+            cmds.log_message(f"{all_reservations_by_id.get(str(chat_id))}")
+            cmds.log_message(f"*****************************************************")
 
-            log_message(f"Первая страница отзывов показана", chat=chat_id)
+            if all_reservations_by_id.get(f"{chat_id}") is not None:
+                bot.send_message(chat_id, "Резерв на данном аккаунте уже существует, напоминаем:")
+                bot.send_message(chat_id, all_reservations_by_id[f"{chat_id}"])
+
+            else:
+                all_reservations_by_id[f"{chat_id}"] = cmds.TableReservation(bot, chat_id)
+                all_reservations_by_id[f"{chat_id}"].start(message_object)
+
+                all_reservations_by_id[f"{chat_id}"] = all_reservations_by_id[f"{chat_id}"].text_for_administrator
+
+                # reservation_info_maker =
+                # reservation_info_maker.start(message_object)
+
+
+                # TODO на 05.06 проблема в том, что cmds.TableReservation.give_result отдаёт данные в пустоту
+                #  и в ячейку словаря приходит None
+
+        elif text == "отзывы" or text == "показать отзывы":
+            cmds.show_yandex_reviews(bot, page=1, chat_id_inner=chat_id)
+
+            cmds.log_message(f"Первая страница отзывов показана", chat=chat_id)
 
             bot.send_message(chat_id, "Показать еще отзывов?", reply_markup=m.inline_review_question_for_more())
 
             @bot.callback_query_handler(func=lambda call: True)
-            def review_callback(call):
+            def review_callback_for_more(call):
                 if call.data == "/more":
-                    cmds.show_yandex_reviews(page=2, chat_id_inner=chat_id)
+                    cmds.show_yandex_reviews(bot, page=2, chat_id_inner=chat_id)
                     bot.send_message(chat_id, cmds.msg_call_to_write_review(), reply_markup=m.yandex_our_corp_link())
 
-                    log_message(f"Вторая страница отзывов показана", chat=chat_id)
+                    cmds.log_message(f"Вторая страница отзывов показана", chat=chat_id)
 
                 elif call.data == "/no":
                     bot.send_message(chat_id, "Хорошо")
@@ -82,11 +82,11 @@ if __name__ == '__main__':
 
         elif text == "написать отзыв":
             bot.send_message(chat_id, cmds.msg_call_to_write_review(), reply_markup=m.yandex_our_corp_link())
-            log_message(f"Написать отзыв показано", chat=chat_id)
+            cmds.log_message(f"Написать отзыв показано", chat=chat_id)
 
         else:
             bot.send_message(chat_id, 'Простите, я ваc не понял :(')
-            log_message(f"Сообщение не распознано: {message.text}", chat=chat_id)
+            cmds.log_message(f"Сообщение не распознано: {message_object.text}", chat=chat_id)
 
 
     bot.infinity_polling()
