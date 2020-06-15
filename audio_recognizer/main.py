@@ -40,4 +40,5 @@ def audio_from_microphone():
     return audio_data
 
 
-callback_handler(audio_from_microphone())
+if __name__ == '__main__':
+    callback_handler(audio_from_microphone())
