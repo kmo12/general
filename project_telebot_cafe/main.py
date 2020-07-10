@@ -50,11 +50,29 @@ if __name__ == '__main__':
             # Проверяем, если ли запись брони для этого пользователя
             if all_reservations_by_id.get(f"{user_id}") is not None:
                 bot.send_message(chat_id, "Резерв на данном аккаунте уже существует, напоминаем:")
-                bot.send_message(chat_id, all_reservations_by_id[f"{user_id}"])
+                msg = bot.send_message(chat_id, all_reservations_by_id[f"{user_id}"], reply_markup=m.keyboard_reservation_abort())
+
+                def done_reservation_callback_handler(message_object):
+                    if message_object.text == "Отменить бронирование":
+                        all_reservations_by_id[f"{message_object.chat.id}"] = None
+                        bot.send_message(message_object.chat.id,
+                                         "Данные удалены.",
+                                         reply_markup=m.reply_start_all_buttons())
+
+                        cmds.log_message(f"Данные {message_object.chat.id} удалены.")
+
+                    elif message_object.text == "Ничего не делать":
+                        # bot.edit_message_reply_markup(message_object.chat.id, message_object.message_id, reply_markup=m.reply_start_all_buttons())
+                        bot.send_message(message_object.chat.id,
+                                         "Хорошо.",
+                                         reply_markup=m.reply_start_all_buttons())
+
+                    # TODO Сюда добавить функционал изменения данных, когда будет прикручен функционал БД
+
+                bot.register_next_step_handler(msg, done_reservation_callback_handler)
+
 
             else:
-                reservation_information = ""
-
                 # Спрашиваем дату
                 new_calendar = t_calendar.CallbackData("calendar_1", "action", "year", "month", "day")
                 bot.send_message(message_object.chat.id, "На какую дату нужен столик? "
@@ -79,8 +97,9 @@ if __name__ == '__main__':
                         getting_date_asking_time(msg)
 
                 def getting_date_asking_time(message_object):
-                    nonlocal reservation_information
-                    reservation_information += f"Дата: {message_object.text.split()[2]}\n"
+                    all_reservations_by_id[f"{message_object.chat.id}"] = f"Дата: {message_object.text.split()[2]}\n"
+
+                    print(f"all_reservations_by_id[f'{message_object.chat.id}'] {all_reservations_by_id[f'{message_object.chat.id}']}")
 
                     msg = bot.send_message(message_object.chat.id,
                                            "На какое время? (Можете ввести в любом формате)")
@@ -88,8 +107,9 @@ if __name__ == '__main__':
 
                 def getting_time_asking_telephone(message_object):
                     # TODO Добавить проверку корректности времени.
-                    nonlocal reservation_information
-                    reservation_information += f"Время: {message_object.text}\n"
+                    all_reservations_by_id[f"{message_object.chat.id}"] += f"Время: {message_object.text}\n"
+
+                    print(all_reservations_by_id[f"{message_object.chat.id}"])
 
                     # TODO Добавить в reply_markup запрос предоставить свой телефон одной кнопкой.
                     msg = bot.send_message(message_object.chat.id,
@@ -98,38 +118,34 @@ if __name__ == '__main__':
 
                 def getting_telephone_asking_name(message_object):
                     # TODO Добавить проверку корректности телефона.
-                    nonlocal reservation_information
-                    reservation_information += f"Телефон: {message_object.text}\n"
+                    all_reservations_by_id[f"{message_object.chat.id}"] += f"Телефон: {message_object.text}\n"
 
                     msg = bot.send_message(message_object.chat.id, "На чьё имя бронируем?")
                     bot.register_next_step_handler(msg, getting_name_asking_confirm)
 
                 def getting_name_asking_confirm(message_object):
                     # TODO Добавить проверку корректности имени (чтобы не было цифр).
-                    nonlocal reservation_information
-                    reservation_information += f"Имя: {message_object.text}"
+                    all_reservations_by_id[f"{message_object.chat.id}"] += f"Имя: {message_object.text}"
 
-                    bot.send_message(message_object.chat.id, reservation_information)
+                    bot.send_message(message_object.chat.id, all_reservations_by_id[f"{message_object.chat.id}"])
                     msg = bot.send_message(message_object.chat.id, "Подтверждаете введённые данные?",
                                            reply_markup=m.keyboard_confirm_reservation())
                     bot.register_next_step_handler(msg, confirm_reservation_callback_handler)
 
                 def confirm_reservation_callback_handler(message_object):
                     if message_object.text == "Да":
-                        all_reservations_by_id[f"{user_id}"] = reservation_information
+                        cmds.log_message(f"Зарезервировано:\n{all_reservations_by_id[f'{message_object.chat.id}']}")
 
                         bot.send_message(message_object.chat.id,
                                          "Будем рады вас видеть! Введённые данные будут переданы управляющему и в течение "
                                          "15 минут с вами созвонятся для подтверждения.",
                                          reply_markup=m.reply_start_all_buttons())
 
-                        cmds.log_message(f"Зарезервировано:\n{reservation_information}")
-
                     elif message_object.text == "Нет":
                         bot.send_message(message_object.chat.id,
                                          "Данные удалены.",
                                          reply_markup=m.reply_start_all_buttons())
-                        cmds.log_message(f"Отмена резерва:\n{reservation_information}")
+                        cmds.log_message(f"Отмена резерва:\n{all_reservations_by_id[f'{message_object.chat.id}']}")
 
                         # TODO Про изменение данных:
                         #  добавить подтверждение данных: для этого вывести данные, которые готовятся для админа, юзеру.
