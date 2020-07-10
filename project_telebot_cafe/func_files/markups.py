@@ -72,9 +72,20 @@ def keyboard_confirm_reservation():
     После выбора опции клавиатура не пропадает!
     :return: types.ReplyKeyboardMarkup Object
     """
-    keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)  #, one_time_keyboard=True)
+    keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)  # , one_time_keyboard=True)
     btn1 = types.KeyboardButton("Да")
     btn2 = types.KeyboardButton("Нет")
+    keyboard.add(btn1, btn2)
+
+    return keyboard
+
+
+def keyboard_reservation_abort():
+    keyboard = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+
+    btn1 = types.KeyboardButton("Отменить бронирование")
+    # btn2 = types.KeyboardButton("Изменить данные")
+    btn2 = types.KeyboardButton("Ничего не делать")
     keyboard.add(btn1, btn2)
 
     return keyboard
