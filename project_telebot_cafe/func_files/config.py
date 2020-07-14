@@ -8,8 +8,17 @@ def yandex_corp_id():
     return 000000000000
 
 
+def pg_db_connection_info():
+    return ("",  # database
+            "",  # user
+            "",  # password
+            "",  # host
+            "5432",  # port
+            )
+
+
 # In case you need to use proxy for connection.
-# Still can't make it work and using dedicated server.
+# Still can't make it work and now Im using dedicated server.
 
 # >> pip install pysocks
 # from telebot import apihelper
