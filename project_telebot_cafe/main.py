@@ -3,8 +3,10 @@
 import func_files.config as config
 import func_files.commands as cmds
 import func_files.markups as m
-
 import func_files.calendar_module as t_calendar
+
+import func_files.pg_database_execution as pg_db_executor
+import func_files.database_commands as db_command
 
 import telebot
 from telebot.types import ReplyKeyboardRemove
@@ -16,10 +18,14 @@ all_reservations_by_id = {}
 if __name__ == '__main__':
     cmds.log_message("Telegram bot GrandCafe запущен", vk=True)
 
-
-    # TODO При использовании скрипта более чем 1 человеком global переменная будет ломаться.
-    #  Возможное решение: добавить какую-то хэш-таблицу вида {message.chat.id: False} или запись в БД и сверяться с ней
-    # is_bot_running = False
+    # Create connection with PostgreSQL DataBase
+    db_info = config.pg_db_connection_info()
+    db_executor = pg_db_executor.PGDataBaseExecutor(db_info[0],  # database
+                                                    db_info[1],  # user
+                                                    db_info[2],  # password
+                                                    db_info[3],  # host
+                                                    db_info[4],  # port
+                                                    )
 
     @bot.message_handler(commands=['start'])
     def start_handler(message):
@@ -50,7 +56,8 @@ if __name__ == '__main__':
             # Проверяем, если ли запись брони для этого пользователя
             if all_reservations_by_id.get(f"{user_id}") is not None:
                 bot.send_message(chat_id, "Резерв на данном аккаунте уже существует, напоминаем:")
-                msg = bot.send_message(chat_id, all_reservations_by_id[f"{user_id}"], reply_markup=m.keyboard_reservation_abort())
+                msg = bot.send_message(chat_id, all_reservations_by_id[f"{user_id}"],
+                                       reply_markup=m.keyboard_reservation_abort())
 
                 def done_reservation_callback_handler(message_object):
                     if message_object.text == "Отменить бронирование":
@@ -99,7 +106,8 @@ if __name__ == '__main__':
                 def getting_date_asking_time(message_object):
                     all_reservations_by_id[f"{message_object.chat.id}"] = f"Дата: {message_object.text.split()[2]}\n"
 
-                    print(f"all_reservations_by_id[f'{message_object.chat.id}'] {all_reservations_by_id[f'{message_object.chat.id}']}")
+                    print(
+                        f"all_reservations_by_id[f'{message_object.chat.id}'] {all_reservations_by_id[f'{message_object.chat.id}']}")
 
                     msg = bot.send_message(message_object.chat.id,
                                            "На какое время? (Можете ввести в любом формате)")
@@ -136,6 +144,8 @@ if __name__ == '__main__':
                     if message_object.text == "Да":
                         cmds.log_message(f"Зарезервировано:\n{all_reservations_by_id[f'{message_object.chat.id}']}")
 
+
+
                         bot.send_message(message_object.chat.id,
                                          "Будем рады вас видеть! Введённые данные будут переданы управляющему и в течение "
                                          "15 минут с вами созвонятся для подтверждения.",
@@ -166,7 +176,8 @@ if __name__ == '__main__':
                         bot.register_next_step_handler(msg, confirm_reservation_callback_handler)
 
         elif text == "отзывы" or text == "показать отзывы":
-            bot.send_message(message_object.chat.id, "К сожалению, сейчас такая возможность недоступна. Мы уже работаем над решением проблемы.",
+            bot.send_message(message_object.chat.id,
+                             "К сожалению, сейчас такая возможность недоступна. Мы уже работаем над решением проблемы.",
                              reply_markup=m.reply_start_all_buttons())
 
             # TODO До 07.06 нормально работало, а потом сломалось. Выдаёт ошибку:
