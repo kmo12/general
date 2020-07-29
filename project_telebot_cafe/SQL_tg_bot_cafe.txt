@@ -1,0 +1,32 @@
+-- Это SQL код для создания нужных и оптимизированных таблиц в pgAdmin 4 для работы с ботом кафе
+
+-- TODO Настроить, чтобы дата выглядела так: %d.%m.%Y
+DROP TABLE IF EXISTS customers CASCADE;
+DROP TABLE IF EXISTS reservations CASCADE;
+
+
+CREATE TABLE customers
+(
+	customer_id int GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) NOT NULL,
+	user_name varchar(100),
+	user_telephone varchar(20),
+	who_invited int,
+	user_telegram_chat_id bigint NOT NULL,
+	
+	CONSTRAINT PK_customers_custome0.r_id PRIMARY KEY (customer_id),
+	CONSTRAINT FK_who_invited_customer_id FOREIGN KEY (who_invited) REFERENCES customers(customer_id)
+);
+
+CREATE TABLE reservations
+(
+	reservation_id int GENERATED ALWAYS AS IDENTITY (START WITH 1 INCREMENT BY 1) NOT NULL,
+	reservation_date varchar(10) NOT NULL,
+	reservation_time time NOT NULL,
+	reservation_telephone varchar(20) NOT NULL,
+	reservation_name varchar(100) NOT NULL,
+	customer_id int NOT NULL,
+	
+	CONSTRAINT PK_reservations_reservation_id PRIMARY KEY (reservation_id),
+	CONSTRAINT CHK_reservations_reservation_date CHECK (reservation_date LIKE '__.__.____'),
+	CONSTRAINT FK_reservations_customers_customer_id FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
+);
