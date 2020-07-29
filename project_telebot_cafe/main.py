@@ -13,19 +13,17 @@ from telebot.types import ReplyKeyboardRemove
 
 bot = telebot.TeleBot(config.api_token())
 
-all_reservations_by_id = {}
+# reservation_container = {}
 
 if __name__ == '__main__':
-    cmds.log_message("Telegram bot GrandCafe запущен", vk=True)
+    # cmds.log_message("Telegram bot GrandCafe запущен", vk=True)
+
+    reservations_container = {}
 
     # Create connection with PostgreSQL DataBase
     db_info = config.pg_db_connection_info()
-    db_executor = pg_db_executor.PGDataBaseExecutor(db_info[0],  # database
-                                                    db_info[1],  # user
-                                                    db_info[2],  # password
-                                                    db_info[3],  # host
-                                                    db_info[4],  # port
-                                                    )
+    db_executor = pg_db_executor.PGDatabaseMainExecutor(*db_info)
+
 
     @bot.message_handler(commands=['start'])
     def start_handler(message):
@@ -44,29 +42,36 @@ if __name__ == '__main__':
     @bot.message_handler(content_types=['text'])
     def text_handler(message_object):
         text = message_object.text.lower()
-        chat_id = message_object.chat.id
+        chat_id = message_object.chat.id  # Используется в БД в колонке user_telegram_chat_id
         user_id = message_object.from_user.id
 
         if text == "забронировать столик":
             # Логи
-            cmds.log_message(f"{all_reservations_by_id}")
-            cmds.log_message(f"{all_reservations_by_id.get(str(user_id))}")
+            cmds.log_message(f"{reservations_container}")
+            cmds.log_message(f"{reservations_container.get(str(user_id))}")
             cmds.log_message(f"*****************************************************")
 
+            def complete_reservation_info_collector(dictionary_with_reserv_info):
+                complete_reservation_info = ""
+                for value, key in dictionary_with_reserv_info.items():
+                    complete_reservation_info += value + ": " + key + "\n"
+                return complete_reservation_info
+
             # Проверяем, если ли запись брони для этого пользователя
-            if all_reservations_by_id.get(f"{user_id}") is not None:
+            if reservations_container.get(f"{chat_id}") is not None:
                 bot.send_message(chat_id, "Резерв на данном аккаунте уже существует, напоминаем:")
-                msg = bot.send_message(chat_id, all_reservations_by_id[f"{user_id}"],
+                msg = bot.send_message(chat_id,
+                                       complete_reservation_info_collector(reservations_container[f"{chat_id}"]),
                                        reply_markup=m.keyboard_reservation_abort())
 
                 def done_reservation_callback_handler(message_object):
                     if message_object.text == "Отменить бронирование":
-                        all_reservations_by_id[f"{message_object.chat.id}"] = None
+                        reservations_container[f"{chat_id}"] = None
                         bot.send_message(message_object.chat.id,
                                          "Данные удалены.",
                                          reply_markup=m.reply_start_all_buttons())
 
-                        cmds.log_message(f"Данные {message_object.chat.id} удалены.")
+                        cmds.log_message(f"Данные {chat_id} удалены.")
 
                     elif message_object.text == "Ничего не делать":
                         # bot.edit_message_reply_markup(message_object.chat.id, message_object.message_id, reply_markup=m.reply_start_all_buttons())
@@ -78,8 +83,10 @@ if __name__ == '__main__':
 
                 bot.register_next_step_handler(msg, done_reservation_callback_handler)
 
-
+            # Начинаем процесс резервирования столика
             else:
+                reservations_container[f"{message_object.chat.id}"] = {}
+
                 # Спрашиваем дату
                 new_calendar = t_calendar.CallbackData("calendar_1", "action", "year", "month", "day")
                 bot.send_message(message_object.chat.id, "На какую дату нужен столик? "
@@ -104,10 +111,7 @@ if __name__ == '__main__':
                         getting_date_asking_time(msg)
 
                 def getting_date_asking_time(message_object):
-                    all_reservations_by_id[f"{message_object.chat.id}"] = f"Дата: {message_object.text.split()[2]}\n"
-
-                    print(
-                        f"all_reservations_by_id[f'{message_object.chat.id}'] {all_reservations_by_id[f'{message_object.chat.id}']}")
+                    reservations_container[f"{message_object.chat.id}"]["Дата"] = f"{message_object.text.split()[2]}"
 
                     msg = bot.send_message(message_object.chat.id,
                                            "На какое время? (Можете ввести в любом формате)")
@@ -115,9 +119,9 @@ if __name__ == '__main__':
 
                 def getting_time_asking_telephone(message_object):
                     # TODO Добавить проверку корректности времени.
-                    all_reservations_by_id[f"{message_object.chat.id}"] += f"Время: {message_object.text}\n"
+                    reservations_container[f"{message_object.chat.id}"]["Время"] = f"{message_object.text}"
 
-                    print(all_reservations_by_id[f"{message_object.chat.id}"])
+                    print(reservations_container[f"{message_object.chat.id}"])
 
                     # TODO Добавить в reply_markup запрос предоставить свой телефон одной кнопкой.
                     msg = bot.send_message(message_object.chat.id,
@@ -126,25 +130,26 @@ if __name__ == '__main__':
 
                 def getting_telephone_asking_name(message_object):
                     # TODO Добавить проверку корректности телефона.
-                    all_reservations_by_id[f"{message_object.chat.id}"] += f"Телефон: {message_object.text}\n"
+                    reservations_container[f"{message_object.chat.id}"]["Телефон"] = f"{message_object.text}"
 
                     msg = bot.send_message(message_object.chat.id, "На чьё имя бронируем?")
                     bot.register_next_step_handler(msg, getting_name_asking_confirm)
 
                 def getting_name_asking_confirm(message_object):
                     # TODO Добавить проверку корректности имени (чтобы не было цифр).
-                    all_reservations_by_id[f"{message_object.chat.id}"] += f"Имя: {message_object.text}"
+                    reservations_container[f"{message_object.chat.id}"]["Имя"] = f"{message_object.text}"
 
-                    bot.send_message(message_object.chat.id, all_reservations_by_id[f"{message_object.chat.id}"])
+                    bot.send_message(message_object.chat.id,
+                                     complete_reservation_info_collector(
+                                         reservations_container[f"{message_object.chat.id}"]))
                     msg = bot.send_message(message_object.chat.id, "Подтверждаете введённые данные?",
                                            reply_markup=m.keyboard_confirm_reservation())
                     bot.register_next_step_handler(msg, confirm_reservation_callback_handler)
 
                 def confirm_reservation_callback_handler(message_object):
                     if message_object.text == "Да":
-                        cmds.log_message(f"Зарезервировано:\n{all_reservations_by_id[f'{message_object.chat.id}']}")
-
-
+                        cmds.log_message(f"Зарезервировано:\n"
+                                         f"{complete_reservation_info_collector(reservations_container[f'{message_object.chat.id}'])}")
 
                         bot.send_message(message_object.chat.id,
                                          "Будем рады вас видеть! Введённые данные будут переданы управляющему и в течение "
@@ -155,7 +160,9 @@ if __name__ == '__main__':
                         bot.send_message(message_object.chat.id,
                                          "Данные удалены.",
                                          reply_markup=m.reply_start_all_buttons())
-                        cmds.log_message(f"Отмена резерва:\n{all_reservations_by_id[f'{message_object.chat.id}']}")
+                        cmds.log_message(f"Отмена резерва:\n{reservations_container[f'{message_object.chat.id}']}")
+
+                        reservations_container[f'{message_object.chat.id}'] = None
 
                         # TODO Про изменение данных:
                         #  добавить подтверждение данных: для этого вывести данные, которые готовятся для админа, юзеру.
@@ -199,18 +206,18 @@ if __name__ == '__main__':
             # cmds.log_message(f"Первая страница отзывов показана", chat=chat_id)
             #
             # bot.send_message(chat_id, "Показать еще отзывов?", reply_markup=m.inline_review_question_for_more())
-            #
-            # @bot.callback_query_handler(func=lambda call: True)
-            # def review_callback_for_more(call):
-            #     if call.data == "/more":
-            #         cmds.show_yandex_reviews(bot, page=2, chat_id_inner=chat_id)
-            #         bot.send_message(chat_id, cmds.msg_call_to_write_review(), reply_markup=m.yandex_our_corp_link())
-            #
-            #         cmds.log_message(f"Вторая страница отзывов показана", chat=chat_id)
-            #
-            #     elif call.data == "/no":
-            #         bot.send_message(chat_id, "Хорошо")
-            #         return
+
+            @bot.callback_query_handler(func=lambda call: True)
+            def review_callback_for_more(call):
+                if call.data == "/more":
+                    cmds.show_yandex_reviews(bot, page=2, chat_id_inner=chat_id)
+                    bot.send_message(chat_id, cmds.msg_call_to_write_review(), reply_markup=m.yandex_our_corp_link())
+
+                    cmds.log_message(f"Вторая страница отзывов показана", chat=chat_id)
+
+                elif call.data == "/no":
+                    bot.send_message(chat_id, "Хорошо")
+                    return
 
         elif text == "написать отзыв":
             bot.send_message(chat_id, cmds.msg_call_to_write_review(), reply_markup=m.yandex_our_corp_link())
@@ -225,3 +232,4 @@ if __name__ == '__main__':
 
 
     bot.infinity_polling()
+    
